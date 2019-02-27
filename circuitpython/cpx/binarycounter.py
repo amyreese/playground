@@ -5,9 +5,8 @@ Right button cycles colors.
 Both buttons together resets the counter.
 """
 
-import time
+import cpgame
 import board
-from digitalio import DigitalInOut, Direction, Pull
 import neopixel
 
 RED = (255, 0, 0)
@@ -23,14 +22,6 @@ OFF = (0,0,0)
 
 COLORS = [RED, ORANGE, YELLOW, LIME, GREEN, CYAN, BLUE, INDIGO, VIOLET]
 
-btn_a = DigitalInOut(board.BUTTON_A)
-btn_a.direction = Direction.INPUT
-btn_a.pull = Pull.DOWN
-
-btn_b = DigitalInOut(board.BUTTON_B)
-btn_b.direction = Direction.INPUT
-btn_b.pull = Pull.DOWN
-
 pxc = 10
 pixels = neopixel.NeoPixel(board.NEOPIXEL, pxc, brightness=0.05, auto_write=False)
 pixels.fill(OFF)
@@ -41,36 +32,65 @@ def next_color():
         for color in COLORS:
             yield color
 
-counter = -1
-step = 1
-interval = 1.0
-colorgen = next_color()
-color = next(colorgen)
-target = time.monotonic()
-while True:
-    if btn_a.value and btn_b.value:
-        counter = 0
-        step = 1
-    elif btn_b.value:
-        color = next(colorgen)
-    elif btn_a.value:
-        step = 0 if step else 1
+class State:
+    pass
 
-    counter += step
-    if counter < 0:
-        counter = (2 ** pxc) - 1
-    elif counter >= (2 ** pxc):
-        counter = 0
+state = State()
+state.counter = -1
+state.step = 1
+state.colors = next_color()
+state.color = next(state.colors)
 
-    print(counter, step, color)
+def render():
+    # print(state.counter, state.step, state.color)
     for i in range(pxc):
-        pixels[i] = color if counter & (2**i) else OFF
+        pixels[i] = state.color if state.counter & (2**i) else OFF
     pixels.show()
 
-    target += interval
-    now = time.monotonic()
-    slp = target - now
-    while slp > 0:
-        time.sleep(slp)
-        now = time.monotonic()
-        slp = target - now
+@cpgame.on(board.BUTTON_A, board.BUTTON_B)
+def button_a(now):
+    print("reset")
+    state.counter = 0
+    state.step = 1
+
+@cpgame.on(board.BUTTON_A)
+def button_a(now):
+    print("next color")
+    state.color = next(state.colors)
+    render()
+
+@cpgame.on(board.BUTTON_B)
+def button_a(now):
+    if state.step:
+        print("pause")
+        state.step = 0
+    else:
+        print("resume")
+        state.step = 1
+
+# @cpgame.every(0.1)
+def buttons(now):
+    if btn_a.value and btn_b.value:
+        state.counter = 0
+        state.step = 1
+        cpgame.stop()
+    elif btn_b.value:
+        state.color = next(state.colors)
+    elif btn_a.value:
+        state.step = 0 if state.step else 1
+
+    render()
+
+@cpgame.every(1)
+def count(now):
+    state.counter += state.step
+    if state.counter < 0:
+        state.counter = (2 ** pxc) - 1
+    elif state.counter >= (2 ** pxc):
+        state.color = next(state.colors)
+        state.counter = 0
+
+    render()
+
+if __name__ == "__main__":
+    cpgame.start()

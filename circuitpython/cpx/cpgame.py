@@ -41,7 +41,8 @@ PRESSES = []
 
 
 def tick(fn):
-    return every(0)
+    INTERVALS[fn] = (0, 0)
+    return fn
 
 def every(interval):
     def wrapper(fn):

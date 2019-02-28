@@ -4,11 +4,15 @@ Uses decorators for defining behavior via callbacks.
 
 Decorators:
 
-  @tick() - Run a function at every tick of the framework
-  @every(x: int) - Run a function every x seconds
+  @tick - Run a function at every tick of the framework
+  @every(t: int) - Run a function every x seconds
+
   @on(*b: pin, action=DOWN) - Run a function on button press
 
 Framework functions:
+
+  at(t: int) - Run a function at monotonic time t
+  after(t: int) - Run a function after monotic time t from now
 
   start() - Start the main event loop
   stop() - Stop the main event loop
@@ -30,6 +34,7 @@ PROPOGATE = object()
 
 RUNNING = True
 INTERVALS = {}
+TIMERS = {}
 BUTTONS = []
 DIOS = []
 PRESSES = []
@@ -43,6 +48,12 @@ def every(interval):
         INTERVALS[fn] = (interval, 0)
         return fn
     return wrapper
+
+def at(target, fn):
+    TIMERS[fn] = target
+
+def after(target, fn):
+    TIMERS[fn] = time.monotonic() + target
 
 def on(*buttons, action=DOWN):
     global GAMEPAD
@@ -81,6 +92,13 @@ def start():
                 target += interval
 
             if next_target is None or next_target > target:
+                next_target = target
+
+        for fn, target in TIMERS.items():
+            if target <= now:
+                del TIMERS[fn]
+                fn(now)
+            elif next_target is None or next_target > target:
                 next_target = target
         
         if next_target is None:

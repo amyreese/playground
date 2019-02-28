@@ -20,10 +20,13 @@ Framework functions:
 
 """
 
+import array
 import board
 import gamepad
+import math
 import time
 
+from audioio import AudioOut, RawSample
 from digitalio import DigitalInOut, Direction, Pull
 from touchio import TouchIn
 
@@ -37,6 +40,11 @@ PROPOGATE = object()
 
 DIGITALIO = [board.BUTTON_A, board.BUTTON_B]
 TOUCHIO = [board.A1, board.A2, board.A3, board.A4, board.A5, board.A6, board.A7]
+SAMPLERATE = 8000  # recommended
+
+AUDIO = AudioOut(board.A0)
+SPEAKER = DigitalInOut(board.SPEAKER_ENABLE)
+SPEAKER.direction = Direction.OUTPUT
 
 # Internal state
 
@@ -96,6 +104,28 @@ def on(*buttons, action=DOWN):
         return fn
 
     return wrapper
+
+
+def enable_speaker(on=True):
+    print("speaker {}".format("on" if on else "off"))
+    SPEAKER.value = on
+
+
+def sample(frequency):
+    length = SAMPLERATE // frequency
+    sine_wave = array.array("H", [0] * length)
+    for i in range(length):
+        sine_wave[i] = int(math.sin(math.pi * 2 * i / 18) * (2 ** 15) + 2 ** 15)
+    return RawSample(sine_wave)
+
+
+def play_sound(sample, duration):
+    AUDIO.play(sample, loop=True)
+    after(duration, stop_sound)
+
+
+def stop_sound(*args):
+    AUDIO.stop()
 
 
 def stop():

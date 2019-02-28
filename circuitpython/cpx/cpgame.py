@@ -83,8 +83,11 @@ def start():
         every(0.02)(Gamepad())
 
     while True:
+        if not TIMERS and not INTERVALS:
+            print("No functions registered, quitting")
+            return 0
+
         now = time.monotonic()
-        next_target = None
         for fn, (interval, last_called) in INTERVALS.items():
             target = last_called + interval
             if target <= now:
@@ -92,19 +95,15 @@ def start():
                 INTERVALS[fn] = (interval, now)
                 target += interval
 
-            if next_target is None or next_target > target:
-                next_target = target
-
         for fn, target in TIMERS.items():
             if target <= now:
                 del TIMERS[fn]
                 fn(now)
-            elif next_target is None or next_target > target:
-                next_target = target
-        
-        if next_target is None:
-            print("No functions registered, quitting")
-            return 0
+
+        next_target = min(
+            [last_called + interval for last_called, interval in INTERVALS.values()] +
+            [target for target in TIMERS.values()]
+        )
 
         while True:
             slp = next_target - time.monotonic()

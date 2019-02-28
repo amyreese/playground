@@ -1,24 +1,13 @@
 import board
 from cpgame import tick, every, on, start, at, after
+from colors import RAINBOW, WHITE, RED, GREEN, OFF
 import neopixel
 import random
 
 
-RED = (255, 0, 0)
-ORANGE = (255, 100, 0)
-YELLOW = (255, 255, 0)
-LIME = (150, 255, 0)
-GREEN = (0, 255, 0)
-CYAN = (0, 255, 150)
-BLUE = (0, 0, 255)
-INDIGO = (100, 0, 255)
-VIOLET = (255, 0, 255)
-WHITE = (200, 200, 200)
-OFF = (0,0,0)
-
 ROUNDS = 10
 SPEEDS = [0.11, 0.1, 0.1, 0.09, 0.08, 0.08, 0.07, 0.06, 0.05, 0.04]
-COLORS = [RED, ORANGE, YELLOW, LIME, GREEN, CYAN, BLUE, INDIGO, VIOLET, WHITE][::-1]
+COLORS = [WHITE] + list(reversed(RAINBOW))
 REWARD = [RED, GREEN]
 FLASH = [WHITE, OFF]
 
@@ -51,6 +40,9 @@ def ready(now):
 
 @on(board.BUTTON_B)
 def play(now):
+    if not State.ready:
+        return
+
     good = 1 if State.pos == 7 else 0
     pixels.fill(REWARD[good])
     pixels[State.pos] = REWARD[not good]

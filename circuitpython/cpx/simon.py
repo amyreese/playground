@@ -3,7 +3,7 @@ import neopixel
 import random
 
 from colors import RED, GREEN, YELLOW, BLUE, WHITE, OFF
-from cpgame import after, cancel, on, start
+from cpgame import after, cancel, on, start, sample, enable_speaker, play_sound
 
 TIMEOUT = 3
 
@@ -13,7 +13,14 @@ OPTIONS = {
     "red": (RED, 3),
     "yellow": (YELLOW, 1),
 }
+SOUNDS = {
+    "blue": sample(659),  # E
+    "green": sample(329),  # Low E
+    "red": sample(440),  # A
+    "yellow": sample(554),  # C#
+}
 OPTION_KEYS = list(OPTIONS.keys())
+
 FLASH = [WHITE, OFF]
 
 pixels = neopixel.NeoPixel(board.NEOPIXEL, 10, brightness=0.01, auto_write=False)
@@ -28,6 +35,7 @@ FAIL = 4
 
 class state:
     phase = READY
+    sound = True
     sequence = []
 
     @classmethod
@@ -72,12 +80,19 @@ def yellow(now):
     press(now, "yellow")
 
 
+@on(board.BUTTON_A)
+@on(board.BUTTON_B)
+def toggle_sound(now):
+    state.sound = not state.sound
+    enable_speaker(state.sound)
+
+
 def press(now, color):
     if state.phase == READY:
         state.begin()
         cancel(ready)
-        render(color)
-        after(0.5, clear)
+        render(color, sound=False)
+        after(0.1, clear)
         after(1, show)
 
     elif state.phase == WATCH:
@@ -95,11 +110,15 @@ def press(now, color):
             after(0, fail)
 
 
-def render(name):
+def render(name, sound=True):
     pixels.fill(OFF)
     color, idx = OPTIONS[name]
     pixels[idx] = color
     pixels.show()
+
+    if sound:
+        sample = SOUNDS[name]
+        play_sound(sample, 0.5)
 
 
 def clear(*args):
@@ -109,6 +128,7 @@ def clear(*args):
 
 def begin(now):
     state.reset()
+    enable_speaker(state.sound)
     after(0.5, ready)
     print("ready")
 

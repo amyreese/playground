@@ -29,9 +29,15 @@ class state:
 
 
 def send(cmd):
-    line = cmd + "\n"
+    if cmd.endswith("\n"):
+        line = cmd
+    else:
+        line = cmd + "\n"
     stdout.write(line)
-    sleep(0.1)
+    old = pixels[STATUS]
+    pixels[STATUS] = YELLOW
+    sleep(0.05)
+    pixels[STATUS] = old
 
 
 def sync(now):
@@ -97,6 +103,7 @@ def reset(now):
     state.data = ""
     state.active = False
     state.handshake = False
+    pixels.fill(OFF)
 
         
 @on(board.D4)

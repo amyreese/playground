@@ -61,10 +61,13 @@ def tick(fn):
     return fn
 
 
-def every(interval):
+def every(interval, fn=None):
     def wrapper(fn):
         INTERVALS[fn] = (interval, 0)
         return fn
+
+    if fn:
+        return wrapper(fn)
 
     return wrapper
 
@@ -77,11 +80,18 @@ def after(target, fn):
     TIMERS[fn] = time.monotonic() + target
 
 
-def cancel(fn):
-    TIMERS.pop(fn, None)
+def cancel(*fns):
+    for fn in fns:
+        INTERVALS.pop(fn, None)
+        TIMERS.pop(fn, None)
+
+        for idx, press in enumerate(PRESSES):
+            if press[0] == fn:
+                PRESSES.pop(idx)
+                break
 
 
-def on(*buttons, action=DOWN):
+def on(*buttons, fn=None, action=DOWN):
     global GAMEPAD
 
     for button in buttons:
@@ -102,6 +112,9 @@ def on(*buttons, action=DOWN):
     def wrapper(fn):
         PRESSES.append((fn, buttons, action))
         return fn
+
+    if fn:
+        return wrapper(fn)
 
     return wrapper
 

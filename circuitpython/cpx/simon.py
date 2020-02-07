@@ -23,7 +23,7 @@ OPTION_KEYS = list(OPTIONS.keys())
 
 FLASH = [WHITE, OFF]
 
-pixels = neopixel.NeoPixel(board.NEOPIXEL, 10, brightness=0.01, auto_write=False)
+pixels = neopixel.NeoPixel(board.NEOPIXEL, 10, brightness=0.1, auto_write=False)
 pixels.fill(OFF)
 pixels.show()
 
